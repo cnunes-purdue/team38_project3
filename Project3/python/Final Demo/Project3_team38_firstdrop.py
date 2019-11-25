@@ -42,6 +42,7 @@ RIGHTMOTOR_PORT = BP.PORT_A
 LEFTMOTOR_PORT = BP.PORT_D
 CONVEYOR_PORT = BP.PORT_B
 HALL_PORT = BP.PORT_1
+SONIC_PORT = 2
 RIGHTLINE_PORT = 3
 LEFTLINE_PORT = 4
 powerMotor = 50
@@ -74,79 +75,94 @@ print("Starting")
 #  Main Logic
 # ---------------------------------------------------
 try:
-    while x != 2:
+    while x != 3:
         try:
-            # Read and store line finder values
-            leftvalue = grovepi.digitalRead(LEFTLINE_PORT)
-            rightvalue = grovepi.digitalRead(RIGHTLINE_PORT)
+            sonicvalue = grovepi.ultrasonicRead(SONIC_PORT)
         except IOError:
             print("Error")
-
-        # ---------------------------------------------------
-        #  Beacon Locating
-        # ---------------------------------------------------
-        if x == 0:  # Check hall sensor when the first beacon has not been passed.
-            try:
-                # Read and store hall sensor value
-                value = BP.get_sensor(HALL_PORT)[0]
-                if value >= 2100:
-                    setpower(LEFTMOTOR_PORT, 15)
-                    setpower(RIGHTMOTOR_PORT, 60)
-                    time.sleep(1.5)
-                    x = x + 1
-            except brickpi3.SensorError as error:
-                print(error)
-
-        if x == 1:  # Check hall sensor when cargo has not been dropped off, after the first beacon.
-            try:
-                # Read and store hall sensor value
-                value = BP.get_sensor(HALL_PORT)[0]
-                if value >= 2100:
-                    setpower(RIGHTMOTOR_PORT, powerMotor)
-                    setpower(LEFTMOTOR_PORT, powerMotor)
-                    time.sleep(0.75)
-                    setpower(CONVEYOR_PORT, powerConveyor)
-                    time.sleep(1.5)
-                    x = x + 1
-            except brickpi3.SensorError as error:
-                print(error)
-
-        # ---------------------------------------------------
-        #  Line Following
-        # ---------------------------------------------------
         try:
-            if leftvalue == 1 and rightvalue == 1:
-                setpower(RIGHTMOTOR_PORT, 30)
-                setpower(LEFTMOTOR_PORT, 30)
-                time.sleep(0.01)
-            if rightvalue == 0 and leftvalue == 1:
-                setpower(RIGHTMOTOR_PORT, -30)
-                setpower(LEFTMOTOR_PORT, 30)
-                time.sleep(0.1)
-            if leftvalue == 0 and rightvalue == 1:
-                setpower(RIGHTMOTOR_PORT, 30)
-                setpower(LEFTMOTOR_PORT, -30)
-                time.sleep(0.1)
-            if leftvalue == 0 and rightvalue == 0:
-                setpower(RIGHTMOTOR_PORT, -30)
-                setpower(LEFTMOTOR_PORT, 30)
-                time.sleep(0.01)
-        except NameError:
-            pass
+            if sonicvalue >= 25:
+                if x != 2:
+                    try:
+                        # Read and store line finder values
+                        leftvalue = grovepi.digitalRead(LEFTLINE_PORT)
+                        rightvalue = grovepi.digitalRead(RIGHTLINE_PORT)
+                    except IOError:
+                        print("Error")
 
-    # ---------------------------------------------------
-    #  Stopping at final beacon
-    # ---------------------------------------------------
-    while x == 2:  # Check hall sensor when the final beacon has not been passed, after the cargo has been dropped off.
-        try:
-            # Read and store hall sensor value
-            value = BP.get_sensor(HALL_PORT)[0]
-            if value >= 2100:
+                    # ---------------------------------------------------
+                    #  Beacon Locating
+                    # ---------------------------------------------------
+                    if x == 0:  # Check hall sensor when the first beacon has not been passed.
+                        try:
+                            # Read and store hall sensor value
+                            value = BP.get_sensor(HALL_PORT)[0]
+                            if value >= 2100:
+                                setpower(LEFTMOTOR_PORT, 15)
+                                setpower(RIGHTMOTOR_PORT, 60)
+                                time.sleep(1.5)
+                                x = x + 1
+                        except brickpi3.SensorError as error:
+                            print(error)
+
+                    if x == 1:  # Check hall sensor when cargo has not been dropped off, after the first beacon.
+                        try:
+                            # Read and store hall sensor value
+                            value = BP.get_sensor(HALL_PORT)[0]
+                            if value >= 2100:
+                                setpower(RIGHTMOTOR_PORT, powerMotor)
+                                setpower(LEFTMOTOR_PORT, powerMotor)
+                                time.sleep(0.75)
+                                setpower(CONVEYOR_PORT, powerConveyor)
+                                time.sleep(1.5)
+                                x = x + 1
+                        except brickpi3.SensorError as error:
+                            print(error)
+
+                    # ---------------------------------------------------
+                    #  Line Following
+                    # ---------------------------------------------------
+                    try:
+                        if leftvalue == 1 and rightvalue == 1:
+                            setpower(RIGHTMOTOR_PORT, 30)
+                            setpower(LEFTMOTOR_PORT, 30)
+                            time.sleep(0.01)
+                        if rightvalue == 0 and leftvalue == 1:
+                            setpower(RIGHTMOTOR_PORT, -30)
+                            setpower(LEFTMOTOR_PORT, 30)
+                            time.sleep(0.1)
+                        if leftvalue == 0 and rightvalue == 1:
+                            setpower(RIGHTMOTOR_PORT, 30)
+                            setpower(LEFTMOTOR_PORT, -30)
+                            time.sleep(0.1)
+                        if leftvalue == 0 and rightvalue == 0:
+                            setpower(RIGHTMOTOR_PORT, -30)
+                            setpower(LEFTMOTOR_PORT, 30)
+                            time.sleep(0.01)
+                    except NameError:
+                        pass
+
+                # ---------------------------------------------------
+                #  Stopping at final beacon
+                # ---------------------------------------------------
+                elif x == 2:  # Check hall sensor when the final beacon has not been passed, after the cargo has been
+                    # dropped off.
+                    try:
+                        # Read and store hall sensor value
+                        value = BP.get_sensor(HALL_PORT)[0]
+                        if value >= 2100:
+                            setpower(RIGHTMOTOR_PORT, 0)
+                            setpower(LEFTMOTOR_PORT, 0)
+                        x = x + 1
+                    except brickpi3.SensorError as error:
+                        print(error)
+                else:
+                    pass
+            else:
                 setpower(RIGHTMOTOR_PORT, 0)
                 setpower(LEFTMOTOR_PORT, 0)
-            x = x + 1
-        except brickpi3.SensorError as error:
-            print(error)
+        except NameError:
+            pass
 
 # ---------------------------------------------------
 #  Exception
